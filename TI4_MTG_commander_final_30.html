@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Georgia', serif; background: #0a0a1a; color: #e8e0d0; padding: 24px; min-height: 100vh; }
+  h1 { text-align: center; font-size: 1.4em; letter-spacing: 3px; text-transform: uppercase; color: #c9a84c; margin-bottom: 4px; }
+  .subtitle { text-align: center; font-size: 0.76em; color: #888; margin-bottom: 18px; letter-spacing: 1px; }
+  .filter-bar { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin-bottom: 8px; }
+  .filter-btn { background: #1a1a2e; border: 1px solid #333; color: #aaa; padding: 4px 13px; border-radius: 20px; cursor: pointer; font-size: 0.73em; letter-spacing: 1px; transition: all 0.2s; }
+  .filter-btn:hover, .filter-btn.active { border-color: #c9a84c; color: #c9a84c; background: #1e1a0e; }
+  .source-bar { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin-bottom: 22px; }
+  .source-btn { background: #12121f; border: 1px solid #2a2a4a; color: #888; padding: 3px 11px; border-radius: 20px; cursor: pointer; font-size: 0.68em; letter-spacing: 1px; transition: all 0.2s; }
+  .source-btn:hover, .source-btn.active { border-color: #7a6aaa; color: #c0b0f0; background: #18183a; }
+  .count-label { text-align: center; font-size: 0.72em; color: #555; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 18px; max-width: 1400px; margin: 0 auto; }
+  .card { background: #111120; border-radius: 12px; border: 1px solid #2a2a3e; overflow: hidden; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.5); }
+  .card-header { padding: 13px 15px 10px; position: relative; }
+  .color-bar { position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 12px 12px 0 0; }
+  .top-row { display: flex; align-items: flex-start; justify-content: space-between; margin-top: 4px; }
+  .faction-name { font-size: 0.93em; font-weight: bold; color: #f0e8d0; }
+  .src-badge { font-size: 0.58em; padding: 2px 7px; border-radius: 8px; flex-shrink: 0; margin-left: 6px; margin-top: 2px; }
+  .src-base { background: #1a2a1a; color: #7ac87a; border: 1px solid #3a5a3a; }
+  .src-pok  { background: #1a1a3a; color: #8080ff; border: 1px solid #3a3a6a; }
+  .src-codex{ background: #2a1a1a; color: #ff9a7a; border: 1px solid #5a3a3a; }
+  .src-te   { background: #2a2a1a; color: #ffdd7a; border: 1px solid #5a5a2a; }
+  .commander-name { font-size: 0.7em; color: #888; margin-top: 2px; font-style: italic; }
+  .mana-symbols { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+  .pip { width: 21px; height: 21px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.68em; font-weight: bold; flex-shrink: 0; }
+  .pip-W { background: #f8f6e8; color: #333; }
+  .pip-U { background: #0e68ab; color: #fff; }
+  .pip-B { background: #2a2a2a; color: #c9a84c; border: 1px solid #555; }
+  .pip-R { background: #d3202a; color: #fff; }
+  .pip-G { background: #00733e; color: #fff; }
+  .archetype-badge { display: inline-block; background: #1e180a; border: 1px solid #5a4a1a; color: #c9a84c; font-size: 0.62em; padding: 2px 8px; border-radius: 10px; margin-top: 6px; }
+  .expand-hint { font-size: 0.6em; color: #444; margin-top: 5px; }
+  .card.expanded .expand-hint { display: none; }
+  .card-body { padding: 0 15px 13px; display: none; }
+  .card.expanded .card-body { display: block; }
+  .section-label { font-size: 0.63em; text-transform: uppercase; letter-spacing: 2px; color: #c9a84c; margin: 10px 0 4px; }
+  .flavor-text { font-style: italic; font-size: 0.73em; color: #aaa; border-left: 2px solid #333; padding-left: 10px; margin-bottom: 7px; line-height: 1.5; }
+  .mechanics { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+  .mechanic-tag { background: #1e1a2e; border: 1px solid #3a3a5e; border-radius: 10px; padding: 2px 8px; font-size: 0.66em; color: #b0a8c8; }
+  .ability-box { background: #0d0d1a; border: 1px solid #2a2a3e; border-radius: 8px; padding: 10px; font-size: 0.71em; line-height: 1.65; color: #ccc; }
+  .ability-box b { color: #c9a84c; }
+  .flip-label { font-size: 0.63em; text-transform: uppercase; letter-spacing: 2px; color: #e090e0; margin: 10px 0 4px; }
+  .flip-box { background: #1a0d1a; border: 1px solid #5a2a5a; border-radius: 8px; padding: 10px; font-size: 0.71em; line-height: 1.65; color: #e0c8e0; }
+  .flip-box b { color: #e090e0; }
+  .stats-row { display: flex; gap: 8px; margin-top: 8px; font-size: 0.68em; color: #888; flex-wrap: wrap; }
+  .stat { background: #1a1a2e; padding: 2px 7px; border-radius: 6px; }
+  .divider { height: 1px; background: #1e1e2e; margin: 7px 0; }
+</style>
+</head>
+<body>
+<h1>⚔ Twilight Imperium × Magic: The Gathering</h1>
+<p class="subtitle">30 Commander Cards · Edición Final · Click para expandir</p>
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="setColor('all',this)">Todos</button>
+  <button class="filter-btn" onclick="setColor('W',this)">⬜ White</button>
+  <button class="filter-btn" onclick="setColor('U',this)">🔵 Blue</button>
+  <button class="filter-btn" onclick="setColor('B',this)">⚫ Black</button>
+  <button class="filter-btn" onclick="setColor('R',this)">🔴 Red</button>
+  <button class="filter-btn" onclick="setColor('G',this)">🟢 Green</button>
+</div>
+<div class="source-bar">
+  <button class="source-btn active" onclick="setSource('all',this)">📦 Todos</button>
+  <button class="source-btn" onclick="setSource('base',this)">🎮 Base Game</button>
+  <button class="source-btn" onclick="setSource('pok',this)">🌌 Prophecy of Kings</button>
+  <button class="source-btn" onclick="setSource('codex',this)">📜 Codex III</button>
+  <button class="source-btn" onclick="setSource('te',this)">⚡ Thunder's Edge</button>
+</div>
+<div class="count-label" id="countLabel"></div>
+<div class="grid" id="grid"></div>
+<script>
+const F = [
+// ══ BASE GAME (17) ══════════════════════════════════════════════════
+{
+  name:"The Emirates of Hacan", cmd:"Quieron, Merchant Prince",
+  colors:["W","U","B","G"], src:"base",
+  bar:"linear-gradient(90deg,#f8f6e8 25%,#0e68ab 25% 50%,#2a2a2a 50% 75%,#00733e 75%)",
+  arch:"Combo / Político",
+  ci:"WUBG — Comercio, negociación, resource denial",
+  flav:'"El Wormhole no se cruza con fuerza bruta. Se compra."',
+  mec:["Draw masivo","Tokens de Tesoro","Política / Vote","Reducción de costes","Hand size ilimitado","Resource denial"],
+  abi:`<b>Pasiva:</b> Cuando un oponente lanza un hechizo usando maná de artefactos, roba una carta.<br><b>+2:</b> Cada jugador puede descartar 1 carta. Los que lo hagan te dan 1 Tesoro. Robas tantas cartas como Tesoros tengas.<br><b>−3:</b> Crea 1 token 2/2 Mercader por cada jugador con "Tap: añade {C}{C}".<br><b>−9:</b> Tus hechizos cuestan {2} menos. No puedes ser objetivo de hechizos de oponentes si tienes más cartas en mano que ellos.`,
+  pt:"4/4", loy:"4"
+},
+{
+  name:"The Federation of Sol", cmd:"Juan Salvador Tao, Speaker",
+  colors:["W","U"], src:"base",
+  bar:"linear-gradient(90deg,#f8f6e8 50%,#0e68ab 50%)",
+  arch:"Tokens / Go Wide",
+  ci:"WU — Humanos, tropa masiva, control adaptativo",
+  flav:'"Somos muchos. Siempre hemos sido muchos."',
+  mec:["Tokens de criatura","Blink / ETB value","Counterspell","Anthem effects","Draw por combate","Infinite combat tricks"],
+  abi:`<b>Pasiva:</b> Al inicio de tu combate, si controlas 5+ criaturas, pon un +1/+1 sobre cada una.<br><b>+1:</b> Crea dos tokens 1/1 Humano Soldado Blanco con Vigilance.<br><b>−2:</b> Devuelve una criatura no legendaria tuya a tu mano. Roba 2 cartas.<br><b>−8:</b> Pon en juego X copias de una criatura no legendaria que controles, donde X es el número de criaturas que controlas.`,
+  pt:"3/5", loy:"4"
+},
+{
+  name:"The L1Z1X Mindnet", cmd:"Ibna Vel Syd, the Assimilated",
+  colors:["U","B"], src:"base",
+  bar:"linear-gradient(90deg,#0e68ab 50%,#2a2a2a 50%)",
+  arch:"Mill / Reanimator",
+  ci:"UB — Asimilación, mill agresivo, control de cementerio",
+  flav:'"No eres un individuo. Eres un nodo en la red."',
+  mec:["Mill agresivo","Reanimación","Robo de hechizos","Clone effects","Counterspell","Death triggers"],
+  abi:`<b>Pasiva:</b> Cuando un oponente hace mill, pon 1 contador de asimilación. Por cada 3 contadores, roba 1 carta.<br><b>+2:</b> El oponente objetivo hace mill 4. Puedes lanzar cualquier criatura revelada así hasta fin de turno.<br><b>−4:</b> Copia el último conjuro en el cementerio de un oponente y lánzalo sin coste.<br><b>−9:</b> Cada oponente hace mill de la mitad de su biblioteca. Ganas vida igual al poder total de criaturas enviadas así.`,
+  pt:"3/4", loy:"3"
+},
+{
+  name:"The Clan of Saar", cmd:"Gurno Ggrocuto, the Wanderer",
+  colors:["R","G"], src:"base",
+  bar:"linear-gradient(90deg,#d3202a 50%,#00733e 50%)",
+  arch:"Aggro / Landfall",
+  ci:"RG — Nomadismo, velocidad, pillaje y destrucción",
+  flav:'"Un hogar es una debilidad. Nosotros somos el fuego que se mueve."',
+  mec:["Haste masivo","Landfall / Ramp","Direct damage","Raid effects","Discard oponente","Sacrifice aggro"],
+  abi:`<b>Pasiva:</b> Las criaturas que controlas tienen Celeridad. Al atacar con 3+, añade {R}{R}.<br><b>+1:</b> Roba 1 carta. Descarta 1 carta aleatoria de la mano de un oponente.<br><b>−2:</b> Destruye un artefacto o tierra no básica objetivo. Su controlador recibe 3 daño.<br><b>−7:</b> Crea 5 tokens 3/2 con Celeridad e Ímpetu. Al fin de turno, los supervivientes se quedan permanentemente.`,
+  pt:"4/3", loy:"4"
+},
+{
+  name:"The Universities of Jol-Nar", cmd:"Agnlan Oln, the Brilliant",
+  colors:["U","B","G"], src:"base",
+  bar:"linear-gradient(90deg,#0e68ab 33%,#2a2a2a 33% 66%,#00733e 66%)",
+  arch:"Combo / Spellslinger",
+  ci:"UBG — Tecnología, sacrificio por conocimiento, investigación obsesiva",
+  flav:'"Fracasar es simplemente adquirir datos."',
+  mec:["Draw masivo","Tutor effects","Self-mill / Dredge","Storm lite","Artifact synergy","Bonus al ser contrarrestado"],
+  abi:`<b>Pasiva:</b> Cuando un hechizo tuyo sea contrarrestado, roba 2 cartas y añade {U}{U}.<br><b>+2:</b> Busca un instantáneo o conjuro, ponlo en tu mano. Pierde 2 vidas.<br><b>−3:</b> Copia el siguiente hechizo no criatura que lances este turno. No puede ser contrarrestado.<br><b>−10:</b> Lanza hasta 3 cartas de conjuro/instantáneo de tu cementerio sin coste. Si causaron daño o eliminaron permanentes, repite una vez.`,
+  pt:"2/5", loy:"3"
+},
+{
+  name:"The Sardakk N'orr", cmd:"Sh'lok, Warrior Supreme",
+  colors:["W","R"], src:"base",
+  bar:"linear-gradient(90deg,#f8f6e8 50%,#d3202a 50%)",
+  arch:"Aggro / Tokens Sacrifice",
+  ci:"WR — Enjambre, guerra total, sacrificio de masas",
+  flav:'"El enjambre no necesita nombre. Solo necesita más."',
+  mec:["Tokens masivos","Anthem effects","Sacrifice para daño","First / Double Strike","Rally","Trample / Overwhelm"],
+  abi:`<b>Pasiva:</b> Tokens que controlas tienen +1/+0. Cuando un token muera en combate, el resto gana +1/+1 hasta fin de turno.<br><b>+1:</b> Crea 3 tokens 1/1 Insecto Guerrero.<br><b>−2:</b> Sacrifica X criaturas. Por cada una, inflige 1 daño a jugador/planeswalker objetivo.<br><b>−8:</b> Hasta fin de turno, criaturas que controlas ganan +3/+0, Trample y "Al morir, crea dos tokens 1/1."`,
+  pt:"5/4", loy:"3"
+},
+{
+  name:"The Xxcha Kingdom", cmd:"Xxekir Grom, Peacekeeper",
+  colors:["W","U","G"], src:"base",
+  bar:"linear-gradient(90deg,#f8f6e8 33%,#0e68ab 33% 66%,#00733e 66%)",
+  arch:"Político / Stax",
+  ci:"WUG — Diplomacia, stax, longevidad paciente",
+  flav:'"La paciencia es la forma más elevada del poder."',
+  mec:["Lifegain masivo","Counter político","Propaganda effects","Tap masivo","Stax selectivo","Extra turnos alternativos"],
+  abi:`<b>Pasiva:</b> Hechizos que apunten a tus permanentes cuestan {2} adicionales. Al inicio de tu turno, si tienes 40+ vidas, roba 2 cartas extra.<br><b>+2:</b> Hasta tu próximo turno, cada hechizo no criatura de un oponente te da 2 vidas y pone 1 barrera sobre un permanente tuyo.<br><b>−3:</b> Pon boca abajo y tapea todas las criaturas de un oponente. No se desapean en su próximo turno.<br><b>−9:</b> Los próximos 3 turnos: oponentes no pueden atacarte ni lanzar más de 1 hechizo por turno.`,
+  pt:"2/6", loy:"5"
+},
+{
+  name:"The Yin Brotherhood", cmd:"Brother Milor, Keeper of Souls",
+  colors:["W","B"], src:"base",
+  bar:"linear-gradient(90deg,#f8f6e8 50%,#2a2a2a 50%)",
+  arch:"Lifedrain / Sacrifice",
+  ci:"WB — Sacrificio, drenaje de vida, deuda espiritual",
+  flav:'"La devoción no tiene precio. Pero sí tiene coste."',
+  mec:["Life drain","Sacrifice para beneficios","Reanimación","Extorsión","Tokens de Espíritu con Volar","Devotion synergy"],
+  abi:`<b>Pasiva:</b> Cada vez que muere una criatura, ganas 1 vida. Por cada 4 vidas ganadas en un turno, crea un token 1/1 Espíritu Blanco con Volar.<br><b>+1:</b> Un oponente sacrifica una criatura. Ganas vidas igual a su poder.<br><b>−3:</b> Regresa hasta 2 criaturas de cualquier cementerio con un -1/-1 y "Al morir, roba una carta."<br><b>−7:</b> Cada oponente pierde vida igual al número de criaturas en su cementerio. Ganas esas vidas.`,
+  pt:"3/4", loy:"4"
+},
+{
+  name:"The Naalu Collective", cmd:"The Oracle of Naalu",
+  colors:["U","G"], src:"base",
+  bar:"linear-gradient(90deg,#0e68ab 50%,#00733e 50%)",
+  arch:"Tempo / Proliferate",
+  ci:"UG — Profecía, manipulación de stack, evolución",
+  flav:'"Ya hemos visto tu próxima jugada. Y la de después."',
+  mec:["Scry masivo","Top-deck manipulation","Proliferate","Counters +1/+1","Flash / Morph","Spy effects"],
+  abi:`<b>Pasiva:</b> Scry 1 al inicio de cada turno. Una vez por turno, puedes mirar la mano de un oponente sin revelarla.<br><b>+2:</b> Scry 3. Por cada carta puesta al fondo, pon un +1/+1 sobre una criatura que controles.<br><b>−2:</b> Prolifera dos veces. Roba 1 carta por cada tipo diferente de contador entre tus permanentes.<br><b>−8:</b> Mira X cartas superiores de la biblioteca de cada oponente (X = permanentes con contadores tuyos). Por cada criatura vista, puedes copiarla hasta fin de turno.`,
+  pt:"3/4", loy:"4"
+},
+{
+  name:"The Nekro Virus", cmd:"Nekro Acidos, the Devourer",
+  colors:["B","R"], src:"base",
+  bar:"linear-gradient(90deg,#2a2a2a 50%,#d3202a 50%)",
+  arch:"Reanimator / Chaos",
+  ci:"BR — Infección, conversión de muertos, caos destructivo",
+  flav:'"No destruimos civilizaciones. Las reciclamos."',
+  mec:["Reanimar criaturas enemigas","Exilio como recurso","Wrath masivo","Chaos spells","Convert / Steal","Muertes = maná"],
+  abi:`<b>Pasiva:</b> Cuando muere una criatura de un oponente, puedes exilarla para añadir {B} o {R}.<br><b>+1:</b> Destruye una criatura objetivo. Si muere, ponla en juego bajo tu control al siguiente turno con un contador de infección.<br><b>−3:</b> Por cada criatura exiliada que controles, inflige 2 daño a jugador/criatura objetivo.<br><b>−8:</b> Pon en juego todas las criaturas de los cementerios de oponentes bajo tu control. Tienen "Al morir, cada oponente pierde 3 vidas."`,
+  pt:"4/4", loy:"3"
+},
+{
+  name:"The Barony of Letnev", cmd:"Viscount Unlenn, Iron Baron",
+  colors:["U","B","R"], src:"base",
+  bar:"linear-gradient(90deg,#0e68ab 33%,#2a2a2a 33% 66%,#d3202a 66%)",
+  arch:"Control / Resource denial",
+  ci:"UBR — Autoritarismo, destrucción calculada, supremacía militar",
+  flav:'"El Baronate no pide. El Baronate exige."',
+  mec:["Hand disruption","Resource destruction","Counterspell agresivo","Life → cartas","Creature kill masivo","Tax effects"],
+  abi:`<b>Pasiva:</b> Puedes pagar vidas en lugar de maná (2:1). Al inicio de tu turno, si tienes menos cartas que cualquier oponente, roba hasta igualar.<br><b>+1:</b> Un oponente descarta 1 carta. Roba 1 carta y pierde 2 vidas.<br><b>−3:</b> Destruye hasta 2 criaturas o artefactos. Por cada uno destruido, añade {U}{B} o {B}{R}.<br><b>−8:</b> Cada oponente descarta su mano y pierde vidas igual a cartas descartadas. Robas esas vidas.`,
+  pt:"3/5", loy:"4"
+},
+{
+  name:"The Winnu", cmd:"Mathis Winnu, the Rightful",
+  colors:["W","U","B","R","G"], src:"base",
+  bar:"linear-gradient(90deg,#f8f6e8 20%,#0e68ab 20% 40%,#2a2a2a 40% 60%,#d3202a 60% 80%,#00733e 80%)",
+  arch:"Midrange / Monarch",
+  ci:"WUBRG — Destino, reclamación, el monarca legítimo",
+  flav:'"Mecatol Rex nos pertenece por derecho divino. Todo lo demás es impaciencia."',
+  mec:["Monarch mechanic","Objetivo único escalado","Ramp / Resource gain","All-color fixing","Crown / Control","Crescendo de poder"],
+  abi:`<b>Pasiva:</b> Solo puede apuntar a un jugador o permanente a la vez. Cuando ese objetivo sea destruido o eliminado, ganas 3 vidas y robas 3 cartas.<br><b>+2:</b> Elige un jugador. Hasta tu próximo turno, cuando gaste maná, añade 1 de cualquier color.<br><b>−3:</b> Conviértete en Monarca. Mientras lo seas, tus hechizos cuestan {1} menos y tus criaturas tienen +1/+1.<br><b>−9:</b> Si eres Monarca: roba 7, gana 7 vidas, crea 7 tokens 3/3 con todas las habilidades de evasión.`,
+  pt:"3/4", loy:"4"
+},
+{
+  name:"The Arborec", cmd:"Letani of Muaat, the Seedmother",
+  colors:["B","G"], src:"base",
+  bar:"linear-gradient(90deg,#2a2a2a 50%,#00733e 50%)",
+  arch:"Token growth / Dredge",
+  ci:"BG — Crecimiento orgánico, muerte y renacimiento",
+  flav:'"La muerte es solo el humus de la próxima generación."',
+  mec:["Token por tierra","Dredge / Graveyard value","Sacrifice → recurso","Regrow / Reclamation","Counters +1/+1","Mana ramp orgánico"],
+  abi:`<b>Pasiva:</b> Al inicio de tu turno, crea 1 token 1/1 Espora Verde por cada tierra básica que controlaste durante todo el turno anterior.<br><b>+1:</b> Pon hasta 2 cartas de criatura de tu cementerio en tu mano. Pierde 1 vida por cada una.<br><b>−3:</b> Sacrifica hasta 5 criaturas. Por cada una, pon 2 contadores +1/+1 sobre una criatura objetivo. Tienen regeneración hasta fin de turno.<br><b>−8:</b> Busca hasta 5 tierras y ponlas en juego. Crea X tokens 3/3, donde X = criaturas en tu cementerio.`,
+  pt:"4/4", loy:"3"
+},
+{
+  name:"The Embers of Muaat", cmd:"The Flame of Muaat",
+  colors:["R"], src:"base",
+  bar:"linear-gradient(90deg,#d3202a,#ff6600)",
+  arch:"Burn / Escalada",
+  ci:"R monocolor — Fuego puro, destrucción, nova estelar",
+  flav:'"El Sol no negocia. El Sol consume."',
+  mec:["Burn directo masivo","Escalada (daño acumulado)","Wrath effects","Hasty beaters","Star synergy","20 daño de golpe"],
+  abi:`<b>Pasiva:</b> Tus hechizos de daño infligen 1 adicional. Si un hechizo tuyo causa 5+ daño a un solo objetivo, roba 1 carta.<br><b>+2:</b> Inflige 3 daño a criatura o planeswalker. Si muere, inflige 3 a su controlador.<br><b>−3:</b> Inflige X daño a cada criatura y jugador, donde X = hechizos lanzados este turno + 2.<br><b>−9:</b> Inflige 20 daño dividido entre cualquier número de objetivos. No puede ser prevenido.`,
+  pt:"4/3", loy:"3"
+},
+{
+  name:"The Ghosts of Creuss", cmd:"Rift Warden Skregg",
+  colors:["U","B","G"], src:"base",
+  bar:"linear-gradient(90deg,#0e68ab 33%,#2a2a2a 33% 66%,#00733e 66%)",
+  arch:"Combo / Multiplanar",
+  ci:"UBG — Wormholes, omnipresencia, manipulación de zonas",
+  flav:'"El espacio entre las estrellas no está vacío. Está lleno de nosotros."',
+  mec:["Tutor avanzado","Blink / Flicker entre zonas","Shadow / Morph","Extra mana por portales","Stack manipulation","Phase effects"],
+  abi:`<b>Pasiva:</b> Una vez por turno, puedes lanzar un instantáneo o criatura con Flash desde tu mano sin usar la pila. No puede ser contrarrestado.<br><b>+2:</b> Exilia una carta de tu mano boca abajo. Al inicio de tu próximo turno, regrésala y roba 1 carta adicional.<br><b>−4:</b> Busca cualquier carta en tu biblioteca, exílala boca abajo y ponla en juego como 4/4 colorless hasta fin de turno.<br><b>−9:</b> Intercambia todos tus permanentes con los de todos los cementerios de cualquier jugador.`,
+  pt:"3/4", loy:"4"
+},
+{
+  name:"The Mentak Coalition", cmd:"Suffi An, Table Captain",
+  colors:["B","R"], src:"base",
+  bar:"linear-gradient(90deg,#2a2a2a 50%,#d3202a 50%)",
+  arch:"Pirates / Tempo aggro",
+  ci:"BR — Piratería, emboscada, acumulación furtiva",
+  flav:'"No es robo. Es recuperación anticipada de deuda."',
+  mec:["Steal / Saqueo","Pre-combat damage","Reactive abilities","Haste / Flash","Resource theft","Counterbuff en combate"],
+  abi:`<b>Pasiva:</b> Al inicio de tu combate, inflige 1 daño a cada oponente por cada Tesoro que controles.<br><b>+1:</b> Roba 1 carta de la mano de un oponente objetivo. Ese oponente pierde 2 vidas.<br><b>−2:</b> Toma el control hasta fin de turno de un artefacto o criatura con coste ≤4. Puede atacar este turno.<br><b>−8:</b> Busca 3 cartas de tu cementerio con coste ≤5 y lánzalas sin pagar su coste.`,
+  pt:"3/4", loy:"3"
+},
+{
+  name:"The Yssaril Tribes", cmd:"Kyver of the Blade and Key",
+  colors:["B","G"], src:"base",
+  bar:"linear-gradient(90deg,#2a2a2a 50%,#00733e 50%)",
+  arch:"Hand advantage / Spy",
+  ci:"BG — Espionaje, acción doble, mano sin límite",
+  flav:'"Dos pasos por delante. Siempre."',
+  mec:["Extra cartas / hand masiva","Spy / mirar manos","Acciones adicionales","Discard oponente","Flash permanents","Stealthy threats"],
+  abi:`<b>Pasiva:</b> No tienes límite de mano. Cuando robas 2+ cartas, roba 1 adicional; luego descarta 1.<br><b>+2:</b> Mira la mano de un oponente. Roba 1 carta por tipo que tengas en común con esa mano.<br><b>−3:</b> Realiza una acción adicional este turno. Los jugadores que ya pasaron no pueden jugar instantáneos en respuesta.<br><b>−9:</b> Toma control de todas las cartas en mano de todos los oponentes. Juégalas hasta fin de turno sin pagar coste.`,
+  pt:"3/5", loy:"4"
+},
+// ══ PROPHECY OF KINGS (7) ═══════════════════════════════════════════
+{
+  name:"The Mahact Gene-Sorcerers", cmd:"Rin the Master's Chosen",
+  colors:["W","U","B"], src:"pok",
+  bar:"linear-gradient(90deg,#f8f6e8 33%,#0e68ab 33% 66%,#2a2a2a 66%)",
+  arch:"Control / Curse",
+  ci:"WUB — Supremacía genética, maldición de comandantes, frialdad aristocrática",
+  flav:'"Somos la línea de sangre más antigua. Todo lo demás es contaminación."',
+  mec:["Hexproof / Shroud propio","Counters -1/-1 sobre oponentes","Clonar comandantes","Curse effects","Impedir habilidades","Legendary synergy"],
+  abi:`<b>Pasiva:</b> Cuando un comandante oponente entre al campo, pon un contador de maldición sobre él. Criaturas con contador de maldición tienen -1/-1 y no pueden activar habilidades de lealtad.<br><b>+2:</b> Pon un contador de maldición sobre el comandante objetivo de un oponente. Roba 1 carta.<br><b>−3:</b> Crea una copia no legendaria del comandante objetivo de un oponente bajo tu control hasta fin de turno.<br><b>−9:</b> Por cada oponente, pon en juego una copia de su comandante con un contador de maldición adicional. Son indestructibles hasta fin de turno.`,
+  pt:"3/5", loy:"5"
+},
+{
+  name:"The Naaz-Rokha Alliance", cmd:"Dart and Tai, Void Hunters",
+  colors:["R","G"], src:"pok",
+  bar:"linear-gradient(90deg,#d3202a 50%,#00733e 50%)",
+  arch:"Midrange / Voltron Hit-and-Run",
+  ci:"RG — Caza, instinto, guerrilla de doble comandante",
+  flav:'"Cazamos lo que otros consideran intocable."',
+  mec:["Doble comandante","Deathtouch / Reach","Pump instants","Trample / Haste","Fight effects","Evasión táctica"],
+  abi:`<b>Dual Commander (Dart y Tai):</b> Ambos comparten lealtad.<br><b>Dart:</b> Celeridad. Al atacar, puede combatir contra una criatura de un oponente.<br><b>Tai:</b> Alcance, Deathtouch. Al inicio de tu combate, pon 2 contadores +1/+1 sobre Dart o Tai.<br><b>+1:</b> Roba 1 carta. Si es criatura, ponla boca abajo en juego.<br><b>−5:</b> Ambas ganan Doble Ataque y Antimagia hasta fin de turno.`,
+  pt:"2+2/2+2", loy:"3"
+},
+{
+  name:"The Empyrean", cmd:"Xuange, the Celestial Judge",
+  colors:["W","U","R"], src:"pok",
+  bar:"linear-gradient(90deg,#f8f6e8 33%,#0e68ab 33% 66%,#d3202a 66%)",
+  arch:"Tempo / Flying aggro",
+  ci:"WUR — Ideal moral, velocidad celestial, justicia ejecutada",
+  flav:'"El universo tiene un orden moral. Lo hacemos cumplir."',
+  mec:["Flying / Evasion masivo","Stax selectivo (atacantes)","Draw en combate aéreo","Flash / Instant speed","Burn justo","Protect de wrath"],
+  abi:`<b>Pasiva:</b> Criaturas con Volar tuyas no pueden ser bloqueadas por criaturas sin Volar o Alcance. Cuando una criatura con Volar te inflige daño de combate, roba 1 carta.<br><b>+1:</b> Crea un token 2/2 Ángel Blanco con Volar y Vigilance.<br><b>−2:</b> Exilia permanentemente una criatura u artefacto sin Volar hasta que Xuange abandone el campo.<br><b>−7:</b> Cada criatura con Volar que controlas hace daño de combate a todos los oponentes como si no hubiera blockers.`,
+  pt:"3/4", loy:"4"
+},
+{
+  name:"The Titans of Ul", cmd:"Ul-The-Ancient, Primordial Warden",
+  colors:["W","G"], src:"pok",
+  bar:"linear-gradient(90deg,#f8f6e8 50%,#00733e 50%)",
+  arch:"Big Creatures / Indestructible",
+  ci:"WG — Fortaleza primordial, territorio, resistencia eterna",
+  flav:'"Somos anteriores a las estrellas. Seguiremos cuando se apaguen."',
+  mec:["Indestructible / Hexproof","Vigilance masivo","Ramp de tierras","Token populating","Counters +1/+1","Sobrevives a tu propio wrath"],
+  abi:`<b>Pasiva:</b> Ul-The-Ancient tiene Indestructible. Criaturas con poder 5+ que controles también la ganan.<br><b>+2:</b> Busca 1 tierra básica y ponla en juego. Crea 1 token 1/1 Verde Ciudadano con Vigilance.<br><b>−3:</b> Hasta fin de turno, criaturas que controles ganan +3/+3. Con poder 8+, también Trample.<br><b>−9:</b> Pon en juego un Titán 10/10 Verde con Indestructible, Vigilance y Trample. Luego popula tu campo 3 veces.`,
+  pt:"6/6", loy:"4"
+},
+{
+  name:"The Vuil'raith Cabal", cmd:"Ragh Saar, Lord of the Rift",
+  colors:["B","R","G"], src:"pok",
+  bar:"linear-gradient(90deg,#2a2a2a 33%,#d3202a 33% 66%,#00733e 66%)",
+  arch:"Chaos Sacrifice / Exile-zone play",
+  ci:"BRG — Caos dimensional, exilio como recurso, consumo ritual",
+  flav:'"El vacío no devora. Transforma."',
+  mec:["Exilio como zona de recursos","Sacrifice masivo para escalar","Wrath propio beneficioso","Chaos effects","Devour mechanic","Ramp por sacrificio"],
+  abi:`<b>Pasiva:</b> Al exiliar una carta (de cualquier fuente), pon 1 contador de vacío sobre Ragh Saar. Por cada 3 contadores, puedes lanzar 1 carta exiliada que controles sin coste hasta fin de turno.<br><b>+1:</b> Sacrifica 1 criatura. Exilia la carta superior de la biblioteca de cada oponente; puedes lanzarlas hasta fin de turno.<br><b>−4:</b> Destruye todos los artefactos y criaturas. Por cada criatura destruida así, pon 1 contador de vacío.<br><b>−9:</b> Lanza sin coste hasta X cartas exiliadas (X = contadores de vacío).`,
+  pt:"4/4", loy:"3"
+},
+{
+  name:"The Nomad", cmd:"The Cavalry, Heir to the Future",
+  colors:["W","R"], src:"pok",
+  bar:"linear-gradient(90deg,#f8f6e8 50%,#d3202a 50%)",
+  arch:"Boros / Conquista temporal",
+  ci:"WR — Conquista gloriosa, legado del futuro, velocidad heroica",
+  flav:'"Venimos del futuro para conquistar el presente. Ese es nuestro destino."',
+  mec:["Extra combates","Legendary synergy","Haste masivo","Legendary creatures matter","Counters de legado","Reanimación de legendarios caídos"],
+  abi:`<b>Pasiva:</b> Cuando una criatura legendaria tuya muera, ganas vida igual a su poder y robas 1 carta. Puedes pagar {3}: regresa esa criatura al campo al siguiente turno con un contador de legado y Celeridad.<br><b>+2:</b> Las criaturas legendarias que controles ganan +2/+0, Celeridad y no pueden ser bloqueadas excepto por criaturas legendarias hasta fin de turno.<br><b>−3:</b> Realiza una fase de combate adicional. Las criaturas que atacaron en esta fase no pueden ser bloqueadas en la adicional.<br><b>−9:</b> Pon en juego desde tu cementerio hasta 3 criaturas legendarias. Tienen Celeridad, Doble Ataque e Indestructible hasta fin de turno.`,
+  pt:"4/4", loy:"3"
+},
+{
+  name:"The Argent Flight", cmd:"The Murmuration, Eternal Wardens",
+  colors:["W","R"], src:"pok",
+  bar:"linear-gradient(90deg,#f8f6e8 50%,#d3202a 50%)",
+  arch:"Boros / Guardianes fanáticos",
+  ci:"WR — Fanatismo del deber sagrado, velocidad de centinela, vigilancia eterna",
+  flav:'"Juramos que los Mahact nunca volverían. Ese juramento no caduca."',
+  mec:["Haste masivo","Tokens con Volar","Fanaticism / Devotion","Vigilance en guardia","Attack triggers","Sacrifice por el deber"],
+  abi:`<b>Pasiva:</b> Las criaturas con Celeridad que controles tienen +1/+1. Al inicio de tu turno, si cada criatura tuya atacó el turno anterior, roba 1 carta.<br><b>+1:</b> Crea dos tokens 1/2 Pájaro Blanco con Volar y Celeridad. Mientras controles 5+ criaturas con Celeridad, estas tienen +1/+0 adicional.<br><b>−2:</b> Hasta fin de turno, todas las criaturas que controles deben atacar si pueden. Por cada criatura que ataque así, pon un +1/+1 sobre ella al final del combate si sigue en juego.<br><b>−8:</b> Hasta fin de turno, las criaturas que controles tienen Volar, Celeridad y Doble Ataque. Siempre que una de ellas infiera daño de combate a un jugador, crea un token copia de ella.`,
+  pt:"3/4", loy:"4"
+},
+// ══ CODEX III (1) ═══════════════════════════════════════════════════
+{
+  name:"The Council Keleres", cmd:"Xander Alexin Victori III, Tribune",
+  colors:["W","U","R"], src:"codex",
+  bar:"linear-gradient(90deg,#f8f6e8 33%,#0e68ab 33% 66%,#d3202a 66%)",
+  arch:"Jeskai / Control político ejecutivo",
+  ci:"WUR — Ley ejecutiva, cumplimiento agresivo, justicia con consecuencias",
+  flav:'"No somos jueces. Somos la consecuencia."',
+  mec:["Control reactivo","Vote / Legislar","Burn como consecuencia legal","Flash / Instant speed","Counterspell selectivo","Draw político (vecino de todos)"],
+  abi:`<b>Pasiva:</b> Eres vecino de todos los jugadores. Al inicio de cada turno de cualquier jugador, si ese jugador tiene más permanentes que en su turno anterior, robas 1 carta.<br><b>+2:</b> Contrarresta un hechizo no criatura objetivo a menos que su controlador pague {3}. Si paga, inflige 3 daño a ese jugador.<br><b>−3:</b> Elige un tipo de permanente. Hasta tu próximo turno, cada vez que un oponente ponga en juego uno de ese tipo, inflige 2 daño a ese jugador y robas 1 carta.<br><b>−9:</b> Por cada oponente, exilia permanentemente el permanente de mayor coste que controle. Roba 2 cartas por cada permanente exiliado así.`,
+  pt:"3/4", loy:"4"
+},
+// ══ THUNDER'S EDGE (5) ══════════════════════════════════════════════
+{
+  name:"Last Bastion", cmd:"Commander Galene, the Unyielding",
+  colors:["W","G"], src:"te",
+  bar:"linear-gradient(90deg,#f8f6e8 50%,#00733e 50%)",
+  arch:"Selesnya / Resistencia imposible",
+  ci:"WG — Supervivencia colectiva, comunidad forjada en la desesperación",
+  flav:'"No peleamos porque podamos ganar. Peleamos porque no podemos rendirse."',
+  mec:["Indestructible temporal","Lifegain por combate","Tokens de superviviente","Anthem defensivo","Populate","Counters +1/+1 al resistir"],
+  abi:`<b>Pasiva:</b> Cuando una criatura tuya sobreviva a daño letal (Indestructible, regeneración), pon un +1/+1 sobre ella y crea un token 1/1 Soldado Blanco.<br><b>+2:</b> Hasta tu próximo turno, las criaturas que controles ganan +0/+3 y Vigilance. Si alguna es atacada y sobrevive, gana un +1/+1 permanente.<br><b>−3:</b> Ganas vidas igual al número de criaturas que controles. Luego popula tu campo dos veces.<br><b>−9:</b> Hasta fin de turno, todas tus criaturas son indestructibles, tienen Lifelink y "Al bloquear, crea una copia de esta criatura que también bloquea."`,
+  pt:"4/6", loy:"4"
+},
+{
+  name:"The Crimson Rebellion", cmd:"Sevond, Seeker of Home",
+  colors:["U","R","G"], src:"te",
+  bar:"linear-gradient(90deg,#0e68ab 33%,#d3202a 33% 66%,#00733e 66%)",
+  arch:"Temur / Caos traumático",
+  ci:"URG — Ruptura dimensional, búsqueda de identidad, fuerza salvaje desorientada",
+  flav:'"Fuimos liberados de la dominación, pero no curados. Seguimos sintiéndonos rotos."',
+  mec:["Chaos effects / Random","Self-modification (counters erráticos)","Explore / Discover","Fight effects","Ramp salvaje","Identidad fluida"],
+  abi:`<b>Pasiva:</b> Al inicio de tu turno, lanza una moneda. Cara: pon un +1/+1 sobre una criatura tuya. Cruz: pon un -1/-1 sobre una criatura de un oponente. No puede ser contrarrestado.<br><b>+2:</b> Explora dos veces. Por cada tierra revelada así, pon un +1/+1 sobre Sevond o una criatura que controles.<br><b>−3:</b> Crea 3 tokens 3/2 Rojo con Celeridad. Al inicio de tu próximo mantenimiento, sacrifícalos y pon dos +1/+1 sobre otra criatura que controles por cada uno.<br><b>−9:</b> Distribuye X contadores +1/+1 entre cualquier número de criaturas objetivo, donde X = criaturas en todos los cementerios. Ganan Trample hasta fin de turno.`,
+  pt:"4/3", loy:"4"
+},
+{
+  name:"The Deepwrought Scholarate", cmd:"Waveform Arbiter, the Liberator",
+  colors:["W","U"], src:"te",
+  bar:"linear-gradient(90deg,#f8f6e8 50%,#0e68ab 50%)",
+  arch:"Azorius / Pillowfort benévolo",
+  ci:"WU — Investigación pacífica, coexistencia estructurada, ley del conocimiento",
+  flav:'"Compartir el conocimiento no es debilidad. Es la única forma de salvar la galaxia."',
+  mec:["Pillowfort / No atacarme","Tax benévolo","Draw compartido con oponentes","ETB value","Flicker","Counters de investigación"],
+  abi:`<b>Pasiva:</b> Los hechizos que apuntan a tus permanentes cuestan {1} adicional. Cuando un oponente robe cartas de cualquier efecto tuyo, tú también robas 1 carta.<br><b>+2:</b> Cada jugador puede robar 1 carta. Por cada jugador que lo haga, pon un contador de investigación sobre Waveform Arbiter. Por cada 3 contadores, crea un token Pista.<br><b>−3:</b> Hasta tu próximo turno, las criaturas no pueden atacarte. Cada oponente que no ataque a nadie este turno roba 1 carta.<br><b>−9:</b> Por cada jugador, busca en tu biblioteca la carta con mayor coste de maná de su color y ponla en juego. Robas 1 carta por cada permanente puesto en juego así.`,
+  pt:"2/5", loy:"4"
+},
+{
+  name:"The Firmament / The Obsidian", cmd:"Pax Omnibus / The Obsidian Voice",
+  colors:["G","U"], src:"te",
+  bar:"linear-gradient(90deg,#00733e 50%,#0e68ab 50%)",
+  arch:"Simic / Doble cara (Transform)",
+  ci:"GU → UB — Utopía orgánica que colapsa en tiranía velada",
+  flav:'"Queríamos construir una galaxia sin reyes. No esperábamos convertirnos en uno."',
+  mec:["Tokens igualitarios","Proliferate","Evolve / Adapt","Draw colectivo","— VOLTEO →","Control / Stax oscuro","Curse effects","Tax oponentes"],
+  abi:`<b>— CARA A: PAX OMNIBUS (The Firmament) —</b><br><br><b>Pasiva:</b> Las criaturas no legendarias que controles entran con un +1/+1. Cuando cualquier jugador cree un token, tú también creas una copia de él.<br><b>+2:</b> Cada jugador crea un token 1/1 Verde Ciudadano. Prolifera.<br><b>−3:</b> Roba 1 carta por cada tipo diferente de contador entre todos los permanentes en juego. Pon un +1/+1 sobre cada criatura que controles.<br><br><b>Condición de volteo:</b> Si Pax Omnibus pierde 3+ contadores de lealtad en un solo turno, o si eres objetivo de 3+ hechizos en un turno, voltea esta carta.`,
+  flip:`<b>— CARA B: THE OBSIDIAN VOICE —</b><br><br><b>Pasiva:</b> Los oponentes no pueden crear tokens. Al inicio de tu turno, roba 1 carta si controlas más permanentes que cualquier oponente.<br><b>+2:</b> Pon una maldición sobre un oponente: "Al inicio de su turno, pierde 1 vida por cada permanente con contador que controle."<br><b>−3:</b> Destruye todos los tokens en juego. Por cada token destruido así, pon un +1/+1 sobre una criatura que controles.<br><b>−9:</b> Toma el control permanente de todos los permanentes con contadores que no controles.`,
+  pt:"3/4", loy:"5"
+},
+{
+  name:"The Ral Nel Consortium", cmd:"Watchful Ojz, the Contractor",
+  colors:["U","G"], src:"te",
+  bar:"linear-gradient(90deg,#0e68ab 50%,#00733e 50%)",
+  arch:"Simic / Evasión y movilidad táctica",
+  ci:"UG — Escurridizos, contratos oportunistas, velocidad adaptable",
+  flav:'"No perdemos batallas. Simplemente no estamos ahí cuando ocurren."',
+  mec:["Flash / Respuesta táctica","Bounce / Redirigir","Haste en criaturas medianas","Counterspell de movimiento","Explore / Adapt","Evasión (no bloqueable)"],
+  abi:`<b>Pasiva:</b> Puedes lanzar criaturas con coste ≤3 como si tuvieran Flash. Cuando una criatura tuya abandone el campo sin ser destruida (bounce, exilio temporal, phase out), roba 1 carta.<br><b>+2:</b> Devuelve una criatura objetivo de cualquier jugador a la mano de su propietario. Si era tuya, ponla de nuevo en juego al inicio del próximo paso de final con un +1/+1 y Celeridad.<br><b>−3:</b> Mueve hasta 3 criaturas que controles a cualquier combinación de zonas que controles. Las que lleguen a zonas sin criaturas tuyas ganan Celeridad y +2/+0 hasta fin de turno.<br><b>−8:</b> Hasta fin de turno, todas las criaturas que controles tienen Flash, Evasión y "Al entrar al campo, puedes devolver una criatura objetivo a la mano de su propietario."`,
+  pt:"3/4", loy:"3"
+},
+];
+
+let activeColor='all', activeSrc='all';
+
+function setColor(c,btn){ activeColor=c; document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(); }
+function setSource(s,btn){ activeSrc=s; document.querySelectorAll('.source-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); render(); }
+function toggle(i){ document.querySelector(`[data-idx="${i}"]`).classList.toggle('expanded'); }
+
+const srcL={base:'🎮 Base',pok:'🌌 PoK',codex:'📜 Codex',te:'⚡ TE'};
+const srcC={base:'src-base',pok:'src-pok',codex:'src-codex',te:'src-te'};
+
+function render(){
+  const grid=document.getElementById('grid');
+  grid.innerHTML='';
+  let count=0;
+  F.forEach((f,i)=>{
+    if(activeColor!=='all' && !f.colors.includes(activeColor)) return;
+    if(activeSrc!=='all' && f.src!==activeSrc) return;
+    count++;
+    const card=document.createElement('div');
+    card.className='card'; card.dataset.idx=i; card.onclick=()=>toggle(i);
+    const pips=f.colors.map(c=>`<div class="pip pip-${c}">${c}</div>`).join('');
+    const tags=f.mec.map(m=>`<span class="mechanic-tag">${m}</span>`).join('');
+    const flipHtml=f.flip?`<div class="flip-label">🔄 Cara B — The Obsidian (tras volteo)</div><div class="flip-box">${f.flip}</div>`:'';
+    card.innerHTML=`
+      <div class="card-header">
+        <div class="color-bar" style="background:${f.bar}"></div>
+        <div class="top-row">
+          <div class="faction-name">${f.name}</div>
+          <span class="src-badge ${srcC[f.src]}">${srcL[f.src]}</span>
+        </div>
+        <div class="commander-name">${f.cmd}</div>
+        <div class="mana-symbols">${pips}</div>
+        <div class="archetype-badge">⚔ ${f.arch}</div>
+        <div class="expand-hint">▼ click para expandir</div>
+      </div>
+      <div class="card-body">
+        <div class="divider"></div>
+        <div class="section-label">🌌 Identidad de color</div>
+        <div style="font-size:0.73em;color:#aaa;margin-bottom:6px">${f.ci}</div>
+        <div class="section-label">📖 Flavor</div>
+        <div class="flavor-text">${f.flav}</div>
+        <div class="section-label">⚙ Mecánicas</div>
+        <div class="mechanics">${tags}</div>
+        <div class="section-label">✨ Habilidades de lealtad</div>
+        <div class="ability-box">${f.abi}</div>
+        ${flipHtml}
+        <div class="stats-row">
+          <span class="stat">P/T ${f.pt}</span>
+          <span class="stat">Loyalty ${f.loy}</span>
+          <span class="stat">Legendary Planeswalker</span>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+  document.getElementById('countLabel').textContent=`Mostrando ${count} de 30 facciones`;
+}
+render();
+</script>
+</body>
+</html>
